@@ -45,7 +45,7 @@ You MUST use these exact dates in subject and body.
 
     token_limit = max(
         MIN_OUTPUT_TOKENS,
-        min(words_to_tokens(payload.lenght_words), MAX_OUTPUT_TOKENS)
+        min(words_to_tokens(payload.length_words), MAX_OUTPUT_TOKENS)
     )
 
     result = generate_email(prompt, token_limit)
