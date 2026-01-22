@@ -11,15 +11,11 @@ from app.prompts.reply import build_reply_prompt
 from app.prompts.template import build_template_prompt
 
 from app.services.llm_service import generate_email
-from app.utils.tokens import words_to_tokens
 from app.utils.dates import extract_dates
 from app.utils.text import normalize_closing
 
 
 router = APIRouter(prefix="/email", tags=["Email"])
-
-MIN_OUTPUT_TOKENS = 200
-MAX_OUTPUT_TOKENS = 550
 
 
 # ---------------- WRITE EMAIL ----------------
@@ -44,13 +40,8 @@ def write_email(payload: WriteEmailRequest):
         extra=extra
     )
 
-    token_limit = max(
-        MIN_OUTPUT_TOKENS,
-        min(words_to_tokens(payload.length_words), MAX_OUTPUT_TOKENS)
-    )
-
     try:
-        result = generate_email(prompt, token_limit)
+        result = generate_email(prompt)   # 🔥 no token limit
         result = normalize_closing(result)
     except Exception as e:
         raise HTTPException(
@@ -70,13 +61,8 @@ def reply_email(payload: ReplyEmailRequest):
         language=payload.language_code
     )
 
-    token_limit = max(
-        MIN_OUTPUT_TOKENS,
-        min(words_to_tokens(payload.length_words), MAX_OUTPUT_TOKENS)
-    )
-
     try:
-        result = generate_email(prompt, token_limit)
+        result = generate_email(prompt)   # 🔥 no token limit
         result = normalize_closing(result)
     except Exception as e:
         raise HTTPException(
@@ -96,13 +82,8 @@ def template_email(payload: ReplyEmailRequest):
         language=payload.language_code
     )
 
-    token_limit = max(
-        MIN_OUTPUT_TOKENS,
-        min(words_to_tokens(payload.length_words), MAX_OUTPUT_TOKENS)
-    )
-
     try:
-        result = generate_email(prompt, token_limit)
+        result = generate_email(prompt)   # 🔥 no token limit
         result = normalize_closing(result)
     except Exception as e:
         raise HTTPException(

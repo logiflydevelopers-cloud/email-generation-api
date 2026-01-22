@@ -3,23 +3,20 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 
 load_dotenv()
-
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-MODEL_NAME = "models/gemini-3-flash-preview"
+MODEL_NAME = "models/gemini-3-flash-preview"  # or gemini-pro
 
-def generate_email(prompt: str, max_tokens: int) -> str:
+def generate_email(prompt: str) -> str:
     model = genai.GenerativeModel(MODEL_NAME)
 
     response = model.generate_content(
         prompt,
         generation_config={
-            "max_output_tokens": max_tokens,
-            "temperature": 0.7,
+            "temperature": 0.6,
         }
     )
 
-    # ✅ SAFE EXTRACTION (Gemini-proof)
     if not response.candidates:
         raise RuntimeError("Gemini returned no candidates")
 
@@ -35,6 +32,6 @@ def generate_email(prompt: str, max_tokens: int) -> str:
     ]
 
     if not text_parts:
-        raise RuntimeError("Gemini returned no text parts")
+        raise RuntimeError("Gemini returned no text output")
 
     return "\n".join(text_parts).strip()
