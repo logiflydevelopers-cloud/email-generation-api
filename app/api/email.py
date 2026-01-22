@@ -9,7 +9,7 @@ from app.prompts.write import build_write_prompt
 from app.prompts.reply import build_reply_prompt
 from app.prompts.template import build_template_prompt
 from app.models.email import ReplyEmailRequest
-from app.services.openai_service import generate_email
+from app.services.llm_service import generate_email
 from app.utils.tokens import words_to_tokens
 from app.utils.dates import extract_dates
 from app.utils.text import normalize_closing
