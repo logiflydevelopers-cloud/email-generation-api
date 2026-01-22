@@ -1,54 +1,40 @@
-def build_write_prompt(topic, tone, language, word_count, extra=""):
-    if word_count <= 80:
-        system_instruction = (
-            "You are an email writing assistant.\n"
-            f"Language: {language}\n"
-            f"Tone: {tone}\n"
-            "This is a SIMPLE, SHORT email.\n"
-            f"The email MUST be between {max(30, word_count - 10)} and {word_count + 5} words.\n"
-            f"DO NOT exceed {word_count + 5} words.\n"
-            "DO NOT include:\n"
-            "- Headings\n"
-            "- Bullet points\n"
-            "- Sections\n"
-            "- Lists\n"
-            "- Explanations\n"
-            "- Strategies\n"
-            "- Plans\n"
-            "- Justifications\n"
-            "Structure:\n"
-            "- Subject line\n"
-            "- One short greeting\n"
-            "- One short body paragraph\n"
-            "- Closing\n"
-            f"{extra}\n"
-        )
+def generate_email_prompt(topic, tone, language, word_count):
+    prompt = f"""
+Role:
+You are an expert Executive Assistant and Communications Specialist.
 
-    elif word_count <= 180:
-        system_instruction = (
-            "You are a professional email writer.\n"
-            f"Language: {language}\n"
-            f"Tone: {tone}\n"
-            f"Target length: {word_count} words.\n"
-            "This is a NORMAL professional email.\n"
-            "Avoid unnecessary sections or excessive detail.\n"
-            f"{extra}\n"
-        )
+Task:
+Generate a professional email using the parameters below.
 
-    else:
-        system_instruction = (
-            "You are an expert Communications Specialist.\n"
-            f"Language: {language}\n"
-            f"Tone: {tone}\n"
-            f"Target length: {word_count} words.\n"
-            "This is a DETAILED or MEETING-style email.\n"
-            "You MAY use headings, bullet points, or sections if helpful.\n"
-            f"{extra}\n"
-        )
+Parameters:
+1. Topic: {topic}
+2. Tone: {tone}
+3. Language: {language}
+4. Word Count: {word_count}
 
-    user_content = (
-        f"Topic:\n{topic}\n\n"
-        "Write the email now."
-    )
+Operational Guidelines:
+- Structure:
+  • Include a clear, compelling Subject Line.
+  • Follow with a well-formatted email body.
+- Contextual Intelligence:
+  • If the topic contains placeholders (e.g., [Date], [Company Name]), keep them unchanged.
+  • If the topic is vague, create a logical and helpful standard email template.
+- Tone Consistency:
+  • Strictly maintain the requested tone throughout the email.
+- Constraint Adherence:
+  • Keep the final output within ±10% of the requested word count.
+- Formatting:
+  • Use professional spacing.
+  • Use a standard email sign-off unless the tone suggests otherwise.
 
-    return f"{system_instruction}\n{user_content}"
+Output Format (must be followed exactly):
+
+Subject: [Generated Subject Line]
+---
+[Email Body]
+
+Do not include explanations, bullet points, or extra commentary.
+Only output the final email in the specified format.
+"""
+    return prompt
+
