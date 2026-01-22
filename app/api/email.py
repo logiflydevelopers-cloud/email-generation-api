@@ -21,27 +21,15 @@ router = APIRouter(prefix="/email", tags=["Email"])
 # ---------------- WRITE EMAIL ----------------
 @router.post("/write", response_model=EmailResponse)
 def write_email(payload: WriteEmailRequest):
-    start_date, end_date = extract_dates(payload.topic)
-
-    extra = ""
-    if start_date and end_date:
-        extra = (
-            "IMPORTANT:\n"
-            f"START_DATE = {start_date}\n"
-            f"END_DATE = {end_date}\n"
-            "You MUST use these exact dates in subject and body.\n"
-        )
-
     prompt = build_write_prompt(
         topic=payload.topic,
         tone=payload.tone,
         language=payload.language_code,
-        word_count=payload.length_words,
-        extra=extra
+        word_count=payload.length_words
     )
 
     try:
-        result = generate_email(prompt)   # 🔥 no token limit
+        result = generate_email(prompt)
         result = normalize_closing(result)
     except Exception as e:
         raise HTTPException(
@@ -50,6 +38,7 @@ def write_email(payload: WriteEmailRequest):
         )
 
     return {"email": result}
+
 
 
 # ---------------- REPLY EMAIL ----------------
