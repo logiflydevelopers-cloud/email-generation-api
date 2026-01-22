@@ -30,7 +30,27 @@ def write_email(payload: WriteEmailRequest):
 
     try:
         result = generate_email(prompt)
+
+        # ✅ Guard: empty or whitespace-only output
+        if not result or not result.strip():
+            raise HTTPException(
+                status_code=502,
+                detail="LLM returned empty response"
+            )
+
+        # ✅ Normalize sign-off
         result = normalize_closing(result)
+
+        # ✅ HARD word-count enforcement (critical)
+        words = result.split()
+        max_words = int(payload.length_words * 1.1)
+
+        if len(words) > max_words:
+            result = " ".join(words[:payload.length_words])
+
+    except HTTPException:
+        raise  # rethrow intentional HTTP errors
+
     except Exception as e:
         raise HTTPException(
             status_code=502,
