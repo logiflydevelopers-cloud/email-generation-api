@@ -4,37 +4,26 @@ Role:
 You are an expert Executive Assistant and Communications Specialist.
 
 Task:
-Generate a professional email using the parameters below.
+Write a professional email.
 
-Parameters:
-1. Topic: {topic}
-2. Tone: {tone}
-3. Language: {language}
-4. Word Count: {word_count}
+STRICT REQUIREMENTS (DO NOT IGNORE):
+- The email MUST be written in {language}.
+- The tone MUST be strictly {tone}.
+- The total length MUST be between {int(word_count * 0.9)} and {int(word_count * 1.1)} words.
+- DO NOT exceed this word limit.
+- If you cannot comply, shorten the email.
 
-Operational Guidelines:
-- Structure:
-  • Include a clear, compelling Subject Line.
-  • Follow with a well-formatted email body.
-- Contextual Intelligence:
-  • If the topic contains placeholders (e.g., [Date], [Company Name]), keep them unchanged.
-  • If the topic is vague, create a logical and helpful standard email template.
-- Tone Consistency:
-  • Strictly maintain the requested tone throughout the email.
-- Constraint Adherence:
-  • Keep the final output within ±10% of the requested word count.
-- Formatting:
-  • Use professional spacing.
-  • Use a standard email sign-off unless the tone suggests otherwise.
+Content Rules:
+- Include a Subject line.
+- Use '---' as a separator.
+- Use the exact dates mentioned in the topic if any.
+- Do NOT add unnecessary details.
+- Do NOT include explanations or meta text.
 
-Output Format (must be followed exactly):
+Output Format (follow exactly):
 
-Subject: [Generated Subject Line]
+Subject: <subject text>
 ---
-[Email Body]
-
-Do not include explanations, bullet points, or extra commentary.
-Only output the final email in the specified format.
+<email body>
 """
     return prompt
-
