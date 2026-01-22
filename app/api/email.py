@@ -18,8 +18,8 @@ from app.utils.text import normalize_closing
 
 router = APIRouter(prefix="/email", tags=["Email"])
 
-MIN_OUTPUT_TOKENS = 120
-MAX_OUTPUT_TOKENS = 450
+MIN_OUTPUT_TOKENS = 200
+MAX_OUTPUT_TOKENS = 550
 
 
 # ---------------- WRITE EMAIL ----------------
