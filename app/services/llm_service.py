@@ -7,8 +7,9 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 MODEL_NAME = "models/gemini-3-flash-preview"
 
-def generate_email(prompt: str) -> str:
+def generate_email(prompt: str, length_words: int) -> str:
     model = genai.GenerativeModel(MODEL_NAME)
+    max_output_tokens = max(200,int(length_words * 1.6) )
 
     response = model.generate_content(
         prompt,
