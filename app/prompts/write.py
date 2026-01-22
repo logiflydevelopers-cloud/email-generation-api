@@ -1,4 +1,4 @@
-def generate_email_prompt(topic, tone, language, word_count):
+def build_write_prompt(topic, tone, language, word_count):
     prompt = f"""
 Role:
 You are an expert Executive Assistant and Communications Specialist.
