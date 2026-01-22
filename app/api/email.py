@@ -30,28 +30,32 @@ def write_email(payload: WriteEmailRequest):
     extra = ""
     if start_date and end_date:
         extra = f"""
-IMPORTANT:
-START_DATE = {start_date}
-END_DATE = {end_date}
-You MUST use these exact dates in subject and body.
-"""
+            IMPORTANT:
+            START_DATE = {start_date}
+            END_DATE = {end_date}
+            You MUST use these exact dates in subject and body.
+            """
 
+    # UPDATED: pass word_count to prompt builder
     prompt = build_write_prompt(
         topic=payload.topic,
         tone=payload.tone,
         language=payload.language_code,
+        word_count=payload.length_words,
         extra=extra
     )
 
+    # Hard safety token limit (unchanged, correct)
     token_limit = max(
         MIN_OUTPUT_TOKENS,
         min(words_to_tokens(payload.length_words), MAX_OUTPUT_TOKENS)
     )
 
     result = generate_email(prompt, token_limit)
-    result = normalize_closing(result)
+    # result = normalize_closing(result)
 
     return {"email": result}
+
 
 
 # ---------------- REPLY EMAIL ----------------
