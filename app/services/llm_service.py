@@ -8,7 +8,7 @@ load_dotenv()
 # Configure Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-MODEL_NAME = "gemini-1.5-flash"
+MODEL_NAME = "gemini-2.5-pro"
 
 def generate_email(prompt: str, max_tokens: int) -> str:
     """
