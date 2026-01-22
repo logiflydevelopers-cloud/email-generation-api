@@ -2,18 +2,13 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# Load environment variables
 load_dotenv()
 
-# Configure Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-MODEL_NAME = "gemini-2.5-pro"
+MODEL_NAME = "models/gemini-pro"
 
 def generate_email(prompt: str, max_tokens: int) -> str:
-    """
-    Sends a prompt to Gemini and returns generated email text.
-    """
     model = genai.GenerativeModel(MODEL_NAME)
 
     response = model.generate_content(
@@ -24,4 +19,22 @@ def generate_email(prompt: str, max_tokens: int) -> str:
         }
     )
 
-    return response.text.strip()
+    # ✅ SAFE EXTRACTION (Gemini-proof)
+    if not response.candidates:
+        raise RuntimeError("Gemini returned no candidates")
+
+    candidate = response.candidates[0]
+
+    if not candidate.content or not candidate.content.parts:
+        raise RuntimeError(
+            f"Gemini returned empty content (finish_reason={candidate.finish_reason})"
+        )
+
+    text_parts = [
+        part.text for part in candidate.content.parts if hasattr(part, "text")
+    ]
+
+    if not text_parts:
+        raise RuntimeError("Gemini returned no text parts")
+
+    return "\n".join(text_parts).strip()

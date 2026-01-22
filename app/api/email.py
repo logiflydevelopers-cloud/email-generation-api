@@ -1,14 +1,15 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.models.email import (
     WriteEmailRequest,
     ReplyEmailRequest,
     EmailResponse,
 )
+
 from app.prompts.write import build_write_prompt
 from app.prompts.reply import build_reply_prompt
 from app.prompts.template import build_template_prompt
-from app.models.email import ReplyEmailRequest
+
 from app.services.llm_service import generate_email
 from app.utils.tokens import words_to_tokens
 from app.utils.dates import extract_dates
@@ -24,19 +25,17 @@ MAX_OUTPUT_TOKENS = 450
 # ---------------- WRITE EMAIL ----------------
 @router.post("/write", response_model=EmailResponse)
 def write_email(payload: WriteEmailRequest):
-    # Extract dates from topic
     start_date, end_date = extract_dates(payload.topic)
 
     extra = ""
     if start_date and end_date:
-        extra = f"""
-            IMPORTANT:
-            START_DATE = {start_date}
-            END_DATE = {end_date}
-            You MUST use these exact dates in subject and body.
-            """
+        extra = (
+            "IMPORTANT:\n"
+            f"START_DATE = {start_date}\n"
+            f"END_DATE = {end_date}\n"
+            "You MUST use these exact dates in subject and body.\n"
+        )
 
-    # UPDATED: pass word_count to prompt builder
     prompt = build_write_prompt(
         topic=payload.topic,
         tone=payload.tone,
@@ -45,17 +44,21 @@ def write_email(payload: WriteEmailRequest):
         extra=extra
     )
 
-    # Hard safety token limit (unchanged, correct)
     token_limit = max(
         MIN_OUTPUT_TOKENS,
         min(words_to_tokens(payload.length_words), MAX_OUTPUT_TOKENS)
     )
 
-    result = generate_email(prompt, token_limit)
-    # result = normalize_closing(result)
+    try:
+        result = generate_email(prompt, token_limit)
+        result = normalize_closing(result)
+    except Exception as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"LLM generation failed: {str(e)}"
+        )
 
     return {"email": result}
-
 
 
 # ---------------- REPLY EMAIL ----------------
@@ -72,14 +75,20 @@ def reply_email(payload: ReplyEmailRequest):
         min(words_to_tokens(payload.length_words), MAX_OUTPUT_TOKENS)
     )
 
-    result = generate_email(prompt, token_limit)
-    result = normalize_closing(result)
+    try:
+        result = generate_email(prompt, token_limit)
+        result = normalize_closing(result)
+    except Exception as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"LLM generation failed: {str(e)}"
+        )
 
     return {"email": result}
 
 
 # ---------------- EMAIL FROM TEMPLATE ----------------
-@router.post("/template")
+@router.post("/template", response_model=EmailResponse)
 def template_email(payload: ReplyEmailRequest):
     prompt = build_template_prompt(
         body=payload.body,
@@ -92,7 +101,13 @@ def template_email(payload: ReplyEmailRequest):
         min(words_to_tokens(payload.length_words), MAX_OUTPUT_TOKENS)
     )
 
-    result = generate_email(prompt, token_limit)
-    result = normalize_closing(result)
+    try:
+        result = generate_email(prompt, token_limit)
+        result = normalize_closing(result)
+    except Exception as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"LLM generation failed: {str(e)}"
+        )
 
     return {"email": result}
