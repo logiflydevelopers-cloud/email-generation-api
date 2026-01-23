@@ -1,103 +1,86 @@
 from fastapi import APIRouter, HTTPException
+import logging
 
 from app.models.email import (
     WriteEmailRequest,
     ReplyEmailRequest,
+    TemplateEmailRequest,
     EmailResponse,
 )
 
-from app.prompts.write import build_write_prompt
-from app.prompts.reply import build_reply_prompt
-from app.prompts.template import build_template_prompt
-
-from app.services.llm_service import generate_email
-from app.utils.dates import extract_dates
-from app.utils.text import normalize_closing
-
+from app.orchestrators.email_builder import (
+    build_write_email,
+    build_reply_email,
+    build_template_email,
+)
 
 router = APIRouter(prefix="/email", tags=["Email"])
+logger = logging.getLogger("email_generation")
 
 
 # ---------------- WRITE EMAIL ----------------
 @router.post("/write", response_model=EmailResponse)
 def write_email(payload: WriteEmailRequest):
-    prompt = build_write_prompt(
-        topic=payload.topic,
-        tone=payload.tone,
-        language=payload.language_code,
-        word_count=payload.length_words
-    )
-
     try:
-        result = generate_email(prompt)
+        email = build_write_email(payload)
+        return {"email": email}
 
-        # ✅ Guard: empty or whitespace-only output
-        if not result or not result.strip():
-            raise HTTPException(
-                status_code=502,
-                detail="LLM returned empty response"
-            )
-
-        # ✅ Normalize sign-off
-        result = normalize_closing(result)
-
-        # ✅ HARD word-count enforcement (critical)
-        words = result.split()
-        max_words = int(payload.length_words * 1.1)
-
-        if len(words) > max_words:
-            result = " ".join(words[:payload.length_words])
-
-    except HTTPException:
-        raise  # rethrow intentional HTTP errors
-
-    except Exception as e:
+    except RuntimeError as e:
+        # Known generation / validation failure
+        logger.warning(f"Write email validation failed: {e}")
         raise HTTPException(
-            status_code=502,
-            detail=f"LLM generation failed: {str(e)}"
+            status_code=422,
+            detail=str(e),
         )
 
-    return {"email": result}
-
+    except Exception as e:
+        # Unexpected server failure
+        logger.exception("Write email generation crashed")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal email generation error",
+        )
 
 
 # ---------------- REPLY EMAIL ----------------
 @router.post("/reply", response_model=EmailResponse)
 def reply_email(payload: ReplyEmailRequest):
-    prompt = build_reply_prompt(
-        body=payload.body,
-        tone=payload.tone,
-        language=payload.language_code
-    )
-
     try:
-        result = generate_email(prompt)   # 🔥 no token limit
-        result = normalize_closing(result)
-    except Exception as e:
+        email = build_reply_email(payload)
+        return {"email": email}
+
+    except RuntimeError as e:
+        logger.warning(f"Reply email validation failed: {e}")
         raise HTTPException(
-            status_code=502,
-            detail=f"LLM generation failed: {str(e)}"
+            status_code=422,
+            detail=str(e),
         )
 
-    return {"email": result}
+    except Exception as e:
+        logger.exception("Reply email generation crashed")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal reply email error",
+        )
 
 
-# ---------------- EMAIL FROM TEMPLATE ----------------
+# ---------------- TEMPLATE EMAIL ----------------
 @router.post("/template", response_model=EmailResponse)
-def template_email(payload: ReplyEmailRequest):
-    prompt = build_template_prompt(
-        body=payload.body,
-        tone=payload.tone,
-        language=payload.language_code
-    )
-
+def template_email(payload: TemplateEmailRequest):
     try:
-        result = generate_email(prompt)   # 🔥 no token limit
-        result = normalize_closing(result)
-    except Exception as e:
+        email = build_template_email(payload)
+        return {"email": email}
+
+    except RuntimeError as e:
+        logger.warning(f"Template email validation failed: {e}")
         raise HTTPException(
-            status_code=502,
-            detail=f"LLM generation failed: {str(e)}"
+            status_code=422,
+            detail=str(e),
         )
 
-    return {"email": result}
+    except Exception as e:
+        logger.exception("Template email generation crashed")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal template email error",
+        )

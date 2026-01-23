@@ -1,37 +1,34 @@
-def build_reply_prompt(body: str, tone: str, language: str) -> str:
+from app.prompts.system import get_system_prompt
+
+
+def build_reply_prompt(
+    body: str,
+    tone: str,
+    language_code: str,
+    max_words: int,
+) -> str:
     return f"""
-You are an expert professional email reply writer.
+{get_system_prompt()}
 
 TASK:
-Write a clear and appropriate reply to the email below.
-
-ORIGINAL EMAIL:
-\"\"\"{body}\"\"\" 
-
-TONE:
-{tone}
-
-LANGUAGE:
-{language}
+Write a professional email REPLY to the message below.
 
 STRICT RULES:
-- Reply ONLY to the given email.
-- Do NOT repeat the original email.
-- Use any real information EXACTLY as provided.
-- If information is missing, use placeholders:
-  {{NAME}}, {{DATE}}, {{TIME}}, {{LOCATION}}, {{COMPANY}}
-- Do NOT invent names, dates, or facts.
-- Do NOT include labels such as "Body:", "Greeting:", or "Closing:".
+- Write the FULL reply email (greeting + body + closing).
+- Respond appropriately to the content provided.
+- Be clear, polite, and relevant.
+- Use full sentences only.
+- No bullet points or numbered lists.
+- Do NOT include explanations or commentary.
 
-FORMAT (STRICT):
-Greeting
-Reply body
-Closing
-Name
+LENGTH:
+- The full reply should be approximately {max_words} words.
 
-MANDATORY ENDING:
-The reply MUST end with EXACTLY:
+ORIGINAL EMAIL:
+\"\"\"
+{body}
+\"\"\"
 
-Best regards,
-{{NAME}}
-"""
+Tone: {tone}
+Language: {language_code}
+""".strip()

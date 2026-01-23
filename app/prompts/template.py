@@ -1,39 +1,37 @@
-def build_template_prompt(body: str, tone: str, language: str) -> str:
+from app.prompts.system import get_system_prompt
+
+
+def build_template_prompt(
+    body: str,
+    tone: str,
+    language_code: str,
+    max_words: int,
+) -> str:
     return f"""
-You are an expert email template designer.
+{get_system_prompt()}
 
 TASK:
-You are given an existing email or draft.
-You MUST rewrite it to create an improved version.
+Modify the EXISTING email template below according to the requested tone and length.
 
 STRICT RULES:
-- DO NOT copy sentences verbatim.
-- DO NOT return the same wording.
-- Rewrite and improve clarity, tone, and flow.
-- Preserve the original intent and structure.
-- If real values (names, dates, places, companies) are present, use them EXACTLY.
-- If information is missing, keep placeholders.
-- Do NOT invent facts or details.
-- Do NOT include labels such as "Body:", "Greeting:", or "Closing:".
+- Preserve the ORIGINAL STRUCTURE of the template.
+- Do NOT add a subject line if one does not already exist.
+- Do NOT remove or rename placeholders.
+- Do NOT change the greeting style unless necessary.
+- Do NOT invent new sections.
+- Improve wording, tone, and flow ONLY.
+- Use full sentences only.
+- No bullet points or numbered lists.
+- Do NOT explain what you changed.
 
-ORIGINAL CONTENT:
-\"\"\"{body}\"\"\" 
+LENGTH:
+- The modified template should be approximately {max_words} words.
 
-TONE:
-{tone}
+EXISTING TEMPLATE:
+\"\"\"
+{body}
+\"\"\"
 
-LANGUAGE:
-{language}
-
-FORMAT (STRICT):
-Greeting
-Body paragraphs
-Closing
-Name
-
-MANDATORY ENDING:
-The email MUST end with EXACTLY:
-
-Best regards,
-{{NAME}}
-"""
+Tone: {tone}
+Language: {language_code}
+""".strip()
