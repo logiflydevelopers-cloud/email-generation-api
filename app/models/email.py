@@ -72,6 +72,22 @@ class EmailResponse(BaseModel):
         description="Generated email content"
     )
 
+    input_tokens: int = Field(
+        ...,
+        description="Estimated input tokens (prompt)"
+    )
+
+    output_tokens: int = Field(
+        ...,
+        description="Estimated output tokens (email content)"
+    )
+
+    total_tokens: int = Field(
+        ...,
+        description="Total estimated tokens (input + output)"
+    )
+
     model_config = ConfigDict(
         extra="forbid"
     )
+

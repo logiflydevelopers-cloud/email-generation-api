@@ -1,22 +1,30 @@
 import logging
+import math
 
 logger = logging.getLogger("email_generation")
 
-# Safe token estimation
-def estimate_tokens_from_chars(char_count: int) -> int:
-    return max(1, int(char_count / 4))
+# 1 token ≈ 4 characters (rounded UP)
+def estimate_tokens_from_text(text: str) -> int:
+    if not text or not text.strip():
+        return 0
+    return math.ceil(len(text) / 4)
 
 
-def log_llm_usage(prompt: str, output: str, model: str = "flash") -> None:
-    prompt_chars = len(prompt)
-    output_chars = len(output)
+def calculate_token_usage(prompt: str, output: str) -> dict[str, int]:
+    input_tokens = estimate_tokens_from_text(prompt)
+    output_tokens = estimate_tokens_from_text(output)
 
-    prompt_tokens = estimate_tokens_from_chars(prompt_chars)
-    output_tokens = estimate_tokens_from_chars(output_chars)
+    total_tokens = input_tokens + output_tokens
 
     logger.debug(
-        f"[LLM USAGE] "
-        f"Prompt: {prompt_chars} chars (~{prompt_tokens} tokens) | "
-        f"Output: {output_chars} chars (~{output_tokens} tokens) | "
-        f"Total: ~{prompt_tokens + output_tokens} tokens"
+        f"[LLM TOKENS] "
+        f"Input: {input_tokens} | "
+        f"Output: {output_tokens} | "
+        f"Total: {total_tokens}"
     )
+
+    return {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+    }

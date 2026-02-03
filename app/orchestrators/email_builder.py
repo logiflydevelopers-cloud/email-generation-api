@@ -17,8 +17,8 @@ from app.utils.text import wrap_email
 
 logger = logging.getLogger("email_generation")
 
-MIN_ACCEPT_RATIO = 0.6        # accept 60% of requested words
-SHORT_EMAIL_MAX_WORDS = 120   # short email threshold
+MIN_ACCEPT_RATIO = 0.6
+SHORT_EMAIL_MAX_WORDS = 120
 
 
 # -------------------------------------------------
@@ -28,7 +28,7 @@ def regenerate_body(
     payload: WriteEmailRequest,
     min_words: int,
     longer: bool = False,
-) -> str:
+) -> tuple[str, str]:
     extra_instruction = ""
 
     if longer:
@@ -46,20 +46,24 @@ def regenerate_body(
         max_words=payload.length_words,
     ) + extra_instruction
 
-    return generate_text(
+    body = generate_text(
         prompt=body_prompt,
         target_words=payload.length_words,
         mode="body",
     )
 
+    return body, body_prompt
+
 
 # -------------------------------------------------
 # WRITE EMAIL (Subject + Body + Closing)
 # -------------------------------------------------
-def build_write_email(payload: WriteEmailRequest) -> str:
+def build_write_email(payload: WriteEmailRequest) -> tuple[str, str]:
     target_words = payload.length_words
     min_words = int(target_words * 0.65)
     is_short_email = target_words <= SHORT_EMAIL_MAX_WORDS
+
+    prompts_used: list[str] = []
 
     # ---------- SUBJECT ----------
     subject_prompt = build_subject_prompt(
@@ -67,6 +71,7 @@ def build_write_email(payload: WriteEmailRequest) -> str:
         tone=payload.tone,
         language_code=payload.language_code,
     )
+    prompts_used.append(subject_prompt)
 
     subject = generate_text(
         prompt=subject_prompt,
@@ -83,7 +88,6 @@ def build_write_email(payload: WriteEmailRequest) -> str:
         max_words=target_words,
     )
 
-    # 🔑 Short email → treat length as TARGET
     if is_short_email:
         body_prompt += (
             "\nIMPORTANT: This is a short email. "
@@ -91,7 +95,8 @@ def build_write_email(payload: WriteEmailRequest) -> str:
             "Do not be overly brief."
         )
 
-    # ---------- BODY (first attempt) ----------
+    prompts_used.append(body_prompt)
+
     body = generate_text(
         prompt=body_prompt,
         target_words=target_words,
@@ -100,24 +105,19 @@ def build_write_email(payload: WriteEmailRequest) -> str:
 
     body_words = len(body.split()) if body else 0
 
-    # ---------- VALIDATION + RETRY (long emails only) ----------
-    if not is_short_email:
+    # ---------- VALIDATION + RETRY ----------
+    if not is_short_email and body_words < min_words * MIN_ACCEPT_RATIO:
+        logger.warning(
+            f"Body too short ({body_words}/{min_words}), retrying once"
+        )
+
+        body, retry_prompt = regenerate_body(payload, min_words, longer=True)
+        prompts_used.append(retry_prompt)
+
+        body_words = len(body.split()) if body else 0
         if body_words < min_words * MIN_ACCEPT_RATIO:
-            logger.error(
-                f"Body far too short ({body_words}/{min_words} words), retrying once"
-            )
-
-            body = regenerate_body(payload, min_words, longer=True)
-            body_words = len(body.split()) if body else 0
-
-            if body_words < min_words * MIN_ACCEPT_RATIO:
-                raise RuntimeError(
-                    f"Generated body too short after retry ({body_words}/{min_words} words)"
-                )
-
-        elif body_words < min_words:
-            logger.warning(
-                f"Body shorter than requested but acceptable ({body_words}/{min_words} words)"
+            raise RuntimeError(
+                f"Generated body too short after retry ({body_words}/{min_words})"
             )
 
     # ---------- CLOSING ----------
@@ -125,6 +125,7 @@ def build_write_email(payload: WriteEmailRequest) -> str:
         tone=payload.tone,
         language_code=payload.language_code,
     )
+    prompts_used.append(closing_prompt)
 
     closing = generate_text(
         prompt=closing_prompt,
@@ -139,13 +140,16 @@ def build_write_email(payload: WriteEmailRequest) -> str:
         closing=closing,
     )
 
-    return email
+    # 🔑 THIS is what the model actually saw
+    full_prompt = "\n\n".join(prompts_used)
+
+    return email, full_prompt
 
 
 # -------------------------------------------------
-# REPLY EMAIL (Single-shot, WORD-based)
+# REPLY EMAIL
 # -------------------------------------------------
-def build_reply_email(payload: ReplyEmailRequest) -> str:
+def build_reply_email(payload: ReplyEmailRequest) -> tuple[str, str]:
     prompt = build_reply_prompt(
         body=payload.body,
         tone=payload.tone,
@@ -162,13 +166,13 @@ def build_reply_email(payload: ReplyEmailRequest) -> str:
     if not email or not email.strip():
         raise RuntimeError("Empty reply email generated")
 
-    return email
+    return email, prompt
 
 
 # -------------------------------------------------
-# TEMPLATE EMAIL (Modify existing template)
+# TEMPLATE EMAIL
 # -------------------------------------------------
-def build_template_email(payload: TemplateEmailRequest) -> str:
+def build_template_email(payload: TemplateEmailRequest) -> tuple[str, str]:
     prompt = build_template_prompt(
         body=payload.body,
         tone=payload.tone,
@@ -185,4 +189,4 @@ def build_template_email(payload: TemplateEmailRequest) -> str:
     if not email or not email.strip():
         raise RuntimeError("Empty template email generated")
 
-    return email
+    return email, prompt
