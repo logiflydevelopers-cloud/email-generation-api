@@ -1,6 +1,12 @@
 fastapi
-uvicorn[standard]
+uvicorn
+gunicorn
 python-dotenv
 openai>=1.0.0
-google-generativeai
 
+firebase-admin>=6.3.0
+google-auth>=2.25.0
+google-auth-httplib2>=0.1.1
+google-api-python-client>=2.110.0
+cachecontrol>=0.13.1
+requests>=2.31.0

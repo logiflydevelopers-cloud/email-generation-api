@@ -1,13 +1,12 @@
 import os
 import time
 import logging
-from dotenv import load_dotenv
 from openai import OpenAI
+from app.core.config import OPENAI_API_KEY
 
 # ------------------ Setup ------------------
-load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 MODEL_NAME = os.getenv(
     "OPENAI_MODEL",

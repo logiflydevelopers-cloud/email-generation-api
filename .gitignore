@@ -1,14 +1,40 @@
-# Virtual env
+# ===============================
+# Virtual Environment & Secrets
+# ===============================
 venv/
 .env
+.env.*
+firebase-service-account.json
 
-# Python cache
+# ===============================
+# Python Cache
+# ===============================
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# IDE
+# ===============================
+# Docker
+# ===============================
+__docker__
+*.log
+
+# ===============================
+# IDE / Editor
+# ===============================
 .vscode/
 .idea/
 
-# OS
+# ===============================
+# OS Files
+# ===============================
 .DS_Store
+Thumbs.db
+
+# ===============================
+# Test / Coverage
+# ===============================
+.coverage
+htmlcov/
+.pytest_cache/

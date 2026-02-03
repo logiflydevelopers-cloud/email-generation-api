@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 import logging
+from app.core.firebase import verify_firebase_token
 
 from app.models.email import (
     WriteEmailRequest,
@@ -14,7 +15,7 @@ from app.orchestrators.email_builder import (
     build_template_email,
 )
 
-router = APIRouter(prefix="/email", tags=["Email"])
+router = APIRouter(prefix="/email", tags=["Email"], dependencies=[Depends(verify_firebase_token)],)
 logger = logging.getLogger("email_generation")
 
 
